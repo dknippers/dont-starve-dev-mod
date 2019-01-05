@@ -1,11 +1,11 @@
 GLOBAL.CHEATS_ENABLED = true
 GLOBAL.require('debugkeys')
 
--- Detect Don't Starve Together
-local is_dst = GLOBAL.TheSim:GetGameID() == "DST"
-
 local state = {
-  is_mastersim = true
+  -- Set on SimPostInit
+  is_mastersim = true,
+  -- Detect Don't Starve Together
+  is_dst = GLOBAL.TheSim:GetGameID() == "DST"
 }
 
 local fn = {}
@@ -19,7 +19,7 @@ function fn.GetPlayer()
 end
 
 function fn.IsMasterSim()
-  if not is_dst then
+  if not state.is_dst then
     return true
   end
 
@@ -67,7 +67,11 @@ function fn.GodMode()
     GLOBAL.c_sethealth(max)
     GLOBAL.c_setsanity(max)
     GLOBAL.c_sethunger(max)
-    GLOBAL.c_setbeaverness(max)
+
+    if state.is_dst then
+      GLOBAL.c_setbeaverness(max)
+    end
+
     GLOBAL.c_godmode()
   else
     GLOBAL.c_remote("c_sethealth("..max..")")
@@ -114,10 +118,23 @@ function fn.GetInventory()
   end
 end
 
+function fn.NextDay()
+  if state.is_dst then
+    if state.is_mastersim then
+      TheWorld:PushEvent("ms_nextcycle")
+    else
+      GLOBAL.c_remote('TheWorld:PushEvent("ms_nextcycle")')
+    end
+  else
+    GLOBAL.GetClock():MakeNextDay()
+  end
+end
+
 GLOBAL._reveal = fn.RevealMap
 GLOBAL._god = fn.GodMode
 GLOBAL._dump = fn.DumpTable
 GLOBAL._inv = fn.GetInventory
+GLOBAL._nextday = fn.NextDay
 
 AddSimPostInit(function()
   state.is_mastersim = fn.IsMasterSim()
