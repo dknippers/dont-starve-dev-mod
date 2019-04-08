@@ -63,7 +63,7 @@ function fn.RevealMap()
 end
 
 function fn.GodMode()
-  local max = is_dst and 1 or 100
+  local max = state.is_dst and 1 or 100
 
   if state.is_mastersim then
     GLOBAL.c_sethealth(max)
@@ -168,11 +168,21 @@ function fn.BeaverMode()
   local beaverness = fn.GetComponent(player, "beaverness")
   if not beaverness then return end
 
-  local is_beaver = not state.is_dst and beaverness:IsBeaver() or beaverness:GetPercent() > 0
-  if is_beaver then
-    beaverness:SetPercent(0)
+  if state.is_dst then
+    local is_beaver = beaverness:GetPercent() == 0
+
+    if is_beaver then
+      beaverness:SetPercent(1)
+    else
+      beaverness:SetPercent(0)
+    end
   else
-    beaverness:SetPercent(1)
+    local is_beaver = beaverness:IsBeaver()
+    if is_beaver then
+      beaverness:SetPercent(0)
+    else
+      beaverness:SetPercent(1)
+    end
   end
 end
 
