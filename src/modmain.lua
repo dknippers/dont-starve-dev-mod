@@ -65,7 +65,7 @@ function fn.RevealMap()
 end
 
 function fn.GodMode()
-  local max = state.is_dst and 1 or 100
+  local max = 1
 
   if state.is_mastersim then
     GLOBAL.c_sethealth(max)
@@ -161,11 +161,20 @@ function fn.CelestialPortalWithMoonRock()
   end
 end
 
+function fn.SpawnIconItems()
+  local items = { "heatrock", "wheeler_tracker", "cutlichen", "axe_pickaxe", "boat_lantern", "boat_torch", "roc_robin_egg" }
+  fn.SpawnPrefabs(items)
+end
+
 function fn.SpawnEquipment()
   local equipment = { "spear", "axe", "goldenaxe", "goldenshovel", "pickaxe", "goldenpickaxe", "hammer", "armorwood" }
+  fn.SpawnPrefabs(equipment, 3)
+end
 
-  for i=1, 3 do
-    for _, prefab in ipairs(equipment) do
+function fn.SpawnPrefabs(prefabs, amount)
+  local n = amount or 1
+  for i=1, n do
+    for _, prefab in ipairs(prefabs) do
       if state.is_mastersim then
         GLOBAL.c_spawn(prefab, 1)
       else
@@ -210,6 +219,7 @@ GLOBAL._nd = fn.NextDay
 GLOBAL._portal = fn.CelestialPortalWithMoonRock
 GLOBAL._pos = fn.GetPlayerPosition
 GLOBAL._eq = fn.SpawnEquipment
+GLOBAL._icons = fn.SpawnIconItems
 GLOBAL._beaver = fn.BeaverMode
 GLOBAL._skip = fn.SkipDays
 GLOBAL._inventorybar = fn.GetInventorybar
