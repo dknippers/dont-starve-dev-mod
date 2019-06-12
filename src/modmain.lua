@@ -2,12 +2,14 @@ GLOBAL.CHEATS_ENABLED = true
 GLOBAL.require('debugkeys')
 
 local SpawnPrefab = GLOBAL.SpawnPrefab
+local Prefabs = GLOBAL.Prefabs
 
 local state = {
   -- Set on SimPostInit
   is_mastersim = true,
   -- Detect Don't Starve Together
-  is_dst = GLOBAL.TheSim:GetGameID() == "DST"
+  is_dst = GLOBAL.TheSim:GetGameID() == "DST",
+  inventorybar = nil
 }
 
 local fn = {}
@@ -132,6 +134,16 @@ function fn.NextDay()
   end
 end
 
+function fn.SkipDays(days)
+  if state.is_dst then
+    print("SkipDays not implemented for DST")
+  else
+    for i = 1, days do
+      fn.NextDay()
+    end
+  end
+end
+
 function fn.GetPlayerPosition()
   local player = fn.GetPlayer()
   return player and player:GetPosition()
@@ -186,6 +198,10 @@ function fn.BeaverMode()
   end
 end
 
+function fn.GetInventorybar()
+  return state.inventorybar
+end
+
 GLOBAL._reveal = fn.RevealMap
 GLOBAL._god = fn.GodMode
 GLOBAL._dump = fn.DumpTable
@@ -195,7 +211,14 @@ GLOBAL._portal = fn.CelestialPortalWithMoonRock
 GLOBAL._pos = fn.GetPlayerPosition
 GLOBAL._eq = fn.SpawnEquipment
 GLOBAL._beaver = fn.BeaverMode
+GLOBAL._skip = fn.SkipDays
+GLOBAL._inventorybar = fn.GetInventorybar
+GLOBAL._prefabs = Prefabs
 
 AddSimPostInit(function()
   state.is_mastersim = fn.IsMasterSim()
+end)
+
+AddClassPostConstruct("widgets/inventorybar", function(inventorybar)
+  state.inventorybar = inventorybar
 end)
