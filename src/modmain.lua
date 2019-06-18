@@ -1,8 +1,11 @@
 GLOBAL.CHEATS_ENABLED = true
 GLOBAL.require('debugkeys')
 
+local TheSim = GLOBAL.TheSim
 local SpawnPrefab = GLOBAL.SpawnPrefab
+local Ents = GLOBAL.Ents
 local Prefabs = GLOBAL.Prefabs
+local unpack = GLOBAL.unpack
 
 local state = {
   -- Set on SimPostInit
@@ -11,6 +14,8 @@ local state = {
   is_dst = GLOBAL.TheSim:GetGameID() == "DST",
   inventorybar = nil
 }
+
+local net_entity = state.is_dst and GLOBAL.net_entity or nil
 
 local fn = {}
 
@@ -38,12 +43,11 @@ function fn.CallOrValue(v, ...)
   return type(v) == "function" and v(...) or v
 end
 
-function fn.GetComponent(o, component_name)
+function fn.GetComponent(o, component_name, get_replica)
   if o then
-    if state.is_mastersim then
+    if state.is_mastersim and not get_replica then
       return o.components and o.components[component_name]
     else
-      -- non mastersims only interact with the replica
       return o.replica and o.replica[component_name]
     end
   end
@@ -134,6 +138,17 @@ function fn.NextDay()
   end
 end
 
+function fn.DropAll()
+  if state.is_dst then
+    print("Not implemented for DST")
+  else
+    local inv = fn.GetInventory()
+    if inv then
+      inv:DropEverything()
+    end
+  end
+end
+
 function fn.SkipDays(days)
   if state.is_dst then
     print("SkipDays not implemented for DST")
@@ -162,7 +177,7 @@ function fn.CelestialPortalWithMoonRock()
 end
 
 function fn.SpawnIconItems()
-  local items = { "heatrock", "wheeler_tracker", "cutlichen", "axe_pickaxe", "boat_lantern", "boat_torch", "roc_robin_egg" }
+  local items = { "heatrock", "wheeler_tracker", "cutlichen", "boat_lantern", "boat_torch", "roc_robin_egg", "telescope", "trusty_shooter" }
   fn.SpawnPrefabs(items)
 end
 
@@ -182,6 +197,43 @@ function fn.SpawnPrefabs(prefabs, amount)
       end
     end
   end
+end
+
+function fn.AtlasImage(prefab, n)
+  for i = 1, (n or 1) do
+    fn.AsMasterSim(function()
+      local spawn = fn.Spawn(prefab)
+
+      local inventoryitem = fn.GetComponent(spawn, "inventoryitem", state.is_dst)
+
+      if inventoryitem then
+        atlas = inventoryitem:GetAtlas()
+        image = inventoryitem:GetImage()
+        print("atlas", tostring(atlas))
+        print("image", tostring(image))
+        spawn:Remove()
+      else
+        print("no inventoryitem!")
+      end
+    end)
+  end
+end
+
+function fn.AsMasterSim(func)
+  if state.is_mastersim then
+    return func()
+  else
+    GLOBAL.TheWorld.ismastersim = true
+    local result = {func()}
+    GLOBAL.TheWorld.ismastersim = false
+    return unpack(result)
+  end
+end
+
+function fn.Spawn(prefab)
+  local guid = TheSim:SpawnPrefab(prefab)
+  local spawn = Ents[guid]
+  return spawn
 end
 
 function fn.BeaverMode()
@@ -224,6 +276,12 @@ GLOBAL._beaver = fn.BeaverMode
 GLOBAL._skip = fn.SkipDays
 GLOBAL._inventorybar = fn.GetInventorybar
 GLOBAL._prefabs = Prefabs
+GLOBAL._player = fn.GetPlayer
+GLOBAL._drop = fn.DropAll
+GLOBAL._spawn = fn.Spawn
+GLOBAL._atlasimage = fn.AtlasImage
+GLOBAL._thesim = TheSim
+GLOBAL._netent = net_entity
 
 AddSimPostInit(function()
   state.is_mastersim = fn.IsMasterSim()
